@@ -1,0 +1,13 @@
+# IDE和编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 其他不需要的文件
+demo.cpp
+tt.py 
