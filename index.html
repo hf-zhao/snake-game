@@ -17,9 +17,21 @@
             <h2>贪吃琪琪</h2>
             <div class="score">分数: <span id="score">0</span></div>
         </div>
-        <canvas id="gameCanvas"></canvas>
-        <button onclick="startGame()">开始游戏</button>
-        <div class="control-tip">使用方向键控制移动</div>
+        <div class="canvas-container">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+        <div class="game-controls">
+            <button onclick="startGame()">开始游戏</button>
+            <!-- 添加移动设备的触摸控制按钮 -->
+            <div class="mobile-controls">
+                <button id="upBtn">↑</button>
+                <div class="horizontal-controls">
+                    <button id="leftBtn">←</button>
+                    <button id="rightBtn">→</button>
+                </div>
+                <button id="downBtn">↓</button>
+            </div>
+        </div>
     </div>
     <script src="./game.js"></script>
 </body>
