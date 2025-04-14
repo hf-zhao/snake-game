@@ -2,13 +2,35 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const scoreElement = document.getElementById('score');
 
-const gridSize = 20;
-const tileCount = canvas.width / gridSize;
+// 计算画布尺寸
+function resizeCanvas() {
+    const container = canvas.parentElement;
+    const size = Math.min(container.clientWidth, window.innerHeight - 180);
+    canvas.width = size;
+    canvas.height = size;
+}
+
+// 初始化时设置画布尺寸
+resizeCanvas();
+// 窗口大小改变时重新计算画布尺寸
+window.addEventListener('resize', resizeCanvas);
+
+const gridSize = 25; // 增大网格大小
+let tileCount = Math.floor(canvas.width / gridSize);
+
+// 食物类型定义
+const foodTypes = [
+    { type: 'apple', color: '#e74c3c', points: 10, image: '🍎' },
+    { type: 'banana', color: '#f1c40f', points: 15, image: '🍌' },
+    { type: 'orange', color: '#e67e22', points: 20, image: '🍊' },
+    { type: 'strawberry', color: '#e84393', points: 25, image: '🍓' },
+    { type: 'cherry', color: '#c0392b', points: 30, image: '🍒' }
+];
 
 let snake = [
     { x: 10, y: 10 },
 ];
-let food = { x: 15, y: 15 };
+let food = { x: 15, y: 15, type: foodTypes[0] };
 let dx = 0;
 let dy = 0;
 let score = 0;
@@ -16,47 +38,56 @@ let gameInterval;
 let gameSpeed = 100;
 let isGameRunning = false;
 
-// 添加特效变量
-let effects = [];
-let lastFoodEaten = null;
-
-// 添加食物类型
-const foodTypes = [
-    { name: 'apple', color: '#e74c3c', score: 10, probability: 0.4 },
-    { name: 'banana', color: '#f1c40f', score: 15, probability: 0.2 },
-    { name: 'orange', color: '#e67e22', score: 20, probability: 0.15 },
-    { name: 'grape', color: '#9b59b6', score: 25, probability: 0.1 },
-    { name: 'watermelon', color: '#2ecc71', score: 30, probability: 0.1 },
-    { name: 'strawberry', color: '#e84393', score: 35, probability: 0.05 }
-];
-
-// 当前食物类型
-let currentFoodType = foodTypes[0];
-
-// 根据概率选择食物类型
-function selectFoodType() {
-    const random = Math.random();
-    let cumulativeProbability = 0;
+// 键盘控制处理函数
+function handleKeyPress(event) {
+    if (!isGameRunning) return;
     
-    for (const foodType of foodTypes) {
-        cumulativeProbability += foodType.probability;
-        if (random <= cumulativeProbability) {
-            return foodType;
-        }
+    const key = event.key;
+    console.log('按键按下:', key);
+    
+    switch (key) {
+        case 'ArrowUp':
+            if (dy !== 1) {
+                dx = 0;
+                dy = -1;
+                console.log('设置向上移动');
+            }
+            break;
+        case 'ArrowDown':
+            if (dy !== -1) {
+                dx = 0;
+                dy = 1;
+                console.log('设置向下移动');
+            }
+            break;
+        case 'ArrowLeft':
+            if (dx !== 1) {
+                dx = -1;
+                dy = 0;
+                console.log('设置向左移动');
+            }
+            break;
+        case 'ArrowRight':
+            if (dx !== -1) {
+                dx = 1;
+                dy = 0;
+                console.log('设置向右移动');
+            }
+            break;
     }
     
-    return foodTypes[0]; // 默认返回苹果
+    // 防止按键引起页面滚动
+    event.preventDefault();
 }
-
-// 加载结束图片
-const endGameImage = new Image();
-endGameImage.src = 'pic.jpg';
 
 // 游戏主循环
 function gameLoop() {
-    if (!isGameRunning) return;
+    if (!isGameRunning) {
+        console.log('游戏未运行');
+        return;
+    }
+    
     updateSnake();
-    updateEffects(); // 更新特效
     if (checkCollision()) {
         gameOver();
         return;
@@ -71,16 +102,10 @@ function updateSnake() {
 
     // 检查是否吃到食物
     if (head.x === food.x && head.y === food.y) {
-        score += currentFoodType.score;
+        score += food.type.points;
         scoreElement.textContent = score;
-        
-        // 记录吃到的食物位置，用于特效
-        lastFoodEaten = { x: food.x, y: food.y };
-        
-        // 添加吃食物的特效
-        addEatEffect(food.x, food.y, currentFoodType.color);
-        
         generateFood();
+        
         // 加快游戏速度
         if (gameSpeed > 50) {
             gameSpeed -= 2;
@@ -89,36 +114,6 @@ function updateSnake() {
         }
     } else {
         snake.pop();
-    }
-}
-
-// 添加吃食物的特效
-function addEatEffect(x, y, color) {
-    // 创建粒子特效
-    for (let i = 0; i < 15; i++) {
-        effects.push({
-            x: x * gridSize + gridSize / 2,
-            y: y * gridSize + gridSize / 2,
-            size: Math.random() * 5 + 2,
-            speedX: (Math.random() - 0.5) * 8,
-            speedY: (Math.random() - 0.5) * 8,
-            life: 1, // 生命值，用于淡出效果
-            color: color // 使用食物的颜色
-        });
-    }
-}
-
-// 更新特效
-function updateEffects() {
-    for (let i = effects.length - 1; i >= 0; i--) {
-        effects[i].x += effects[i].speedX;
-        effects[i].y += effects[i].speedY;
-        effects[i].life -= 0.02; // 逐渐消失
-        
-        // 移除消失的特效
-        if (effects[i].life <= 0) {
-            effects.splice(i, 1);
-        }
     }
 }
 
@@ -145,75 +140,52 @@ function drawGame() {
 
     // 绘制蛇
     snake.forEach((segment, index) => {
-        // 蛇头使用不同颜色
-        if (index === 0) {
-            ctx.fillStyle = '#3498db'; // 蓝色蛇头
-        } else {
-            // 蛇身渐变色
-            const greenValue = Math.floor(150 + (index * 2));
-            ctx.fillStyle = `rgb(46, ${greenValue}, 204)`;
-        }
-        
-        // 绘制圆角矩形作为蛇的身体
         const x = segment.x * gridSize;
         const y = segment.y * gridSize;
         const size = gridSize - 2;
-        const radius = 8;
         
-        ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + size - radius, y);
-        ctx.quadraticCurveTo(x + size, y, x + size, y + radius);
-        ctx.lineTo(x + size, y + size - radius);
-        ctx.quadraticCurveTo(x + size, y + size, x + size - radius, y + size);
-        ctx.lineTo(x + radius, y + size);
-        ctx.quadraticCurveTo(x, y + size, x, y + size - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
-        ctx.closePath();
-        ctx.fill();
-        
-        // 为蛇头添加眼睛
         if (index === 0) {
-            ctx.fillStyle = 'white';
+            // 蛇头使用纯色
+            ctx.fillStyle = '#3498db';
             
-            // 根据移动方向确定眼睛位置
-            let eyeX1, eyeY1, eyeX2, eyeY2;
-            const eyeSize = 3;
-            
-            if (dx === 1) { // 向右
-                eyeX1 = x + size - 5;
-                eyeY1 = y + 5;
-                eyeX2 = x + size - 5;
-                eyeY2 = y + size - 5;
-            } else if (dx === -1) { // 向左
-                eyeX1 = x + 5;
-                eyeY1 = y + 5;
-                eyeX2 = x + 5;
-                eyeY2 = y + size - 5;
-            } else if (dy === -1) { // 向上
-                eyeX1 = x + 5;
-                eyeY1 = y + 5;
-                eyeX2 = x + size - 5;
-                eyeY2 = y + 5;
-            } else if (dy === 1) { // 向下
-                eyeX1 = x + 5;
-                eyeY1 = y + size - 5;
-                eyeX2 = x + size - 5;
-                eyeY2 = y + size - 5;
-            } else { // 默认（游戏开始前）
-                eyeX1 = x + 5;
-                eyeY1 = y + 5;
-                eyeX2 = x + size - 5;
-                eyeY2 = y + 5;
-            }
-            
-            ctx.beginPath();
-            ctx.arc(eyeX1, eyeY1, eyeSize, 0, Math.PI * 2);
+            // 绘制圆角矩形作为蛇头
+            roundRect(ctx, x + 1, y + 1, size - 2, size - 2, 10);
             ctx.fill();
             
-            ctx.beginPath();
-            ctx.arc(eyeX2, eyeY2, eyeSize, 0, Math.PI * 2);
+            // 添加眼睛
+            ctx.fillStyle = 'white';
+            if (dx === 1) { // 向右
+                ctx.beginPath();
+                ctx.arc(x + size - 8, y + 8, 3, 0, Math.PI * 2);
+                ctx.arc(x + size - 8, y + size - 8, 3, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (dx === -1) { // 向左
+                ctx.beginPath();
+                ctx.arc(x + 8, y + 8, 3, 0, Math.PI * 2);
+                ctx.arc(x + 8, y + size - 8, 3, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (dy === -1) { // 向上
+                ctx.beginPath();
+                ctx.arc(x + 8, y + 8, 3, 0, Math.PI * 2);
+                ctx.arc(x + size - 8, y + 8, 3, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (dy === 1) { // 向下
+                ctx.beginPath();
+                ctx.arc(x + 8, y + size - 8, 3, 0, Math.PI * 2);
+                ctx.arc(x + size - 8, y + size - 8, 3, 0, Math.PI * 2);
+                ctx.fill();
+            } else { // 默认（游戏开始时）
+                ctx.beginPath();
+                ctx.arc(x + 8, y + 8, 3, 0, Math.PI * 2);
+                ctx.arc(x + size - 8, y + 8, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        } else {
+            // 蛇身使用纯色
+            ctx.fillStyle = '#2ecc71';
+            
+            // 绘制圆角矩形作为蛇身
+            roundRect(ctx, x + 1, y + 1, size - 2, size - 2, 8);
             ctx.fill();
         }
     });
@@ -223,121 +195,34 @@ function drawGame() {
     const foodY = food.y * gridSize;
     const foodSize = gridSize - 2;
     
-    // 根据食物类型绘制不同的水果
-    ctx.fillStyle = currentFoodType.color;
+    // 绘制食物背景
+    ctx.fillStyle = food.type.color;
+    ctx.beginPath();
+    ctx.arc(foodX + foodSize/2, foodY + foodSize/2, foodSize/2 - 1, 0, Math.PI * 2);
+    ctx.fill();
     
-    switch (currentFoodType.name) {
-        case 'apple':
-            // 绘制苹果
-            ctx.beginPath();
-            ctx.arc(foodX + foodSize/2, foodY + foodSize/2, foodSize/2, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 添加苹果柄
-            ctx.strokeStyle = '#27ae60';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(foodX + foodSize/2, foodY + 2);
-            ctx.quadraticCurveTo(foodX + foodSize/2 + 5, foodY - 2, foodX + foodSize/2 + 10, foodY + 2);
-            ctx.stroke();
-            break;
-            
-        case 'banana':
-            // 绘制香蕉
-            ctx.beginPath();
-            ctx.moveTo(foodX + foodSize/4, foodY + foodSize/4);
-            ctx.quadraticCurveTo(foodX + foodSize/2, foodY + foodSize/2, foodX + foodSize*3/4, foodY + foodSize/4);
-            ctx.quadraticCurveTo(foodX + foodSize/2, foodY + foodSize*3/4, foodX + foodSize/4, foodY + foodSize/4);
-            ctx.fill();
-            break;
-            
-        case 'orange':
-            // 绘制橘子
-            ctx.beginPath();
-            ctx.arc(foodX + foodSize/2, foodY + foodSize/2, foodSize/2, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 添加橘子纹理
-            ctx.strokeStyle = '#d35400';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < 3; i++) {
-                ctx.beginPath();
-                ctx.arc(foodX + foodSize/2, foodY + foodSize/2, foodSize/3 - i*2, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-            break;
-            
-        case 'grape':
-            // 绘制葡萄
-            for (let i = 0; i < 3; i++) {
-                for (let j = 0; j < 2; j++) {
-                    ctx.beginPath();
-                    ctx.arc(foodX + foodSize/3 + i*5, foodY + foodSize/3 + j*5, foodSize/6, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
-            break;
-            
-        case 'watermelon':
-            // 绘制西瓜
-            ctx.beginPath();
-            ctx.arc(foodX + foodSize/2, foodY + foodSize/2, foodSize/2, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 添加西瓜纹理
-            ctx.strokeStyle = '#27ae60';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(foodX + foodSize/2, foodY + foodSize/2, foodSize/3, 0, Math.PI * 2);
-            ctx.stroke();
-            break;
-            
-        case 'strawberry':
-            // 绘制草莓
-            ctx.beginPath();
-            ctx.moveTo(foodX + foodSize/2, foodY + 2);
-            ctx.lineTo(foodX + foodSize - 2, foodY + foodSize/2);
-            ctx.lineTo(foodX + foodSize/2, foodY + foodSize - 2);
-            ctx.lineTo(foodX + 2, foodY + foodSize/2);
-            ctx.closePath();
-            ctx.fill();
-            
-            // 添加草莓叶子
-            ctx.fillStyle = '#27ae60';
-            ctx.beginPath();
-            ctx.ellipse(foodX + foodSize/2, foodY + 2, 3, 2, 0, 0, Math.PI * 2);
-            ctx.fill();
-            break;
-    }
-    
-    // 绘制特效
-    effects.forEach(effect => {
-        ctx.globalAlpha = effect.life;
-        ctx.fillStyle = effect.color;
-        ctx.beginPath();
-        ctx.arc(effect.x, effect.y, effect.size, 0, Math.PI * 2);
-        ctx.fill();
-    });
-    ctx.globalAlpha = 1; // 重置透明度
+    // 绘制食物表情
+    ctx.font = `${foodSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(food.type.image, foodX + foodSize/2, foodY + foodSize/2);
 }
 
 // 生成食物
 function generateFood() {
+    const randomType = foodTypes[Math.floor(Math.random() * foodTypes.length)];
     food = {
         x: Math.floor(Math.random() * tileCount),
-        y: Math.floor(Math.random() * tileCount)
+        y: Math.floor(Math.random() * tileCount),
+        type: randomType
     };
-    
-    // 确保食物不会生成在蛇身上
     while (snake.some(segment => segment.x === food.x && segment.y === food.y)) {
         food = {
             x: Math.floor(Math.random() * tileCount),
-            y: Math.floor(Math.random() * tileCount)
+            y: Math.floor(Math.random() * tileCount),
+            type: randomType
         };
     }
-    
-    // 选择新的食物类型
-    currentFoodType = selectFoodType();
 }
 
 // 检查碰撞
@@ -364,68 +249,78 @@ function gameOver() {
     isGameRunning = false;
     clearInterval(gameInterval);
     
-    // 创建结束界面的容器
-    const endGameContainer = document.createElement('div');
-    endGameContainer.style.position = 'fixed';
-    endGameContainer.style.top = '50%';
-    endGameContainer.style.left = '50%';
-    endGameContainer.style.transform = 'translate(-50%, -50%)';
-    endGameContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-    endGameContainer.style.padding = '20px';
-    endGameContainer.style.borderRadius = '15px';
-    endGameContainer.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.2)';
-    endGameContainer.style.textAlign = 'center';
-    endGameContainer.style.zIndex = '1000';
-
+    // 创建游戏结束界面
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.zIndex = '1000';
+    
+    // 创建结果容器
+    const resultContainer = document.createElement('div');
+    resultContainer.style.backgroundColor = '#34495e';
+    resultContainer.style.padding = '20px';
+    resultContainer.style.borderRadius = '15px';
+    resultContainer.style.textAlign = 'center';
+    resultContainer.style.maxWidth = '80%';
+    
     // 添加得分
     const scoreText = document.createElement('h2');
-    scoreText.textContent = `游戏结束！你的得分是：${score}`;
-    scoreText.style.color = '#2c3e50';
-    scoreText.style.marginBottom = '15px';
-    endGameContainer.appendChild(scoreText);
-
+    scoreText.style.color = '#ecf0f1';
+    scoreText.style.marginBottom = '20px';
+    scoreText.textContent = `游戏结束！得分：${score}`;
+    
     // 添加图片
     const image = document.createElement('img');
-    image.src = 'pic.jpg';
-    image.style.width = '200px';
-    image.style.height = '200px';
-    image.style.objectFit = 'cover';
+    image.src = './pic.jpg';
+    image.style.maxWidth = '200px';
     image.style.borderRadius = '10px';
-    image.style.marginBottom = '15px';
-    endGameContainer.appendChild(image);
-
-    // 添加提示文字
+    image.style.marginBottom = '20px';
+    
+    // 添加鼓励文字
     const message = document.createElement('p');
-    message.textContent = '宝宝还得多练哦！';
-    message.style.color = '#e74c3c';
-    message.style.fontSize = '18px';
+    message.style.color = '#ecf0f1';
+    message.style.fontSize = '1.2em';
     message.style.marginBottom = '20px';
-    endGameContainer.appendChild(message);
-
+    message.textContent = '宝宝还需要多加练习哦！';
+    
     // 添加重新开始按钮
     const restartButton = document.createElement('button');
-    restartButton.textContent = '重新开始';
+    restartButton.textContent = '再玩一次';
     restartButton.style.padding = '10px 20px';
-    restartButton.style.fontSize = '16px';
+    restartButton.style.fontSize = '1.1em';
     restartButton.style.backgroundColor = '#3498db';
     restartButton.style.color = 'white';
     restartButton.style.border = 'none';
     restartButton.style.borderRadius = '5px';
     restartButton.style.cursor = 'pointer';
+    
     restartButton.onclick = () => {
-        document.body.removeChild(endGameContainer);
+        document.body.removeChild(overlay);
         startGame();
     };
-    endGameContainer.appendChild(restartButton);
-
-    document.body.appendChild(endGameContainer);
+    
+    // 组装界面
+    resultContainer.appendChild(scoreText);
+    resultContainer.appendChild(image);
+    resultContainer.appendChild(message);
+    resultContainer.appendChild(restartButton);
+    overlay.appendChild(resultContainer);
+    document.body.appendChild(overlay);
 }
 
 // 开始游戏
 function startGame() {
     if (isGameRunning) return;
     
-    // 重置游戏状态
+    // 重置所有状态
     snake = [{ x: 10, y: 10 }];
     dx = 0;
     dy = 0;
@@ -434,46 +329,101 @@ function startGame() {
     gameSpeed = 100;
     isGameRunning = true;
     
+    // 重新计算网格数量
+    tileCount = Math.floor(canvas.width / gridSize);
+    
     generateFood();
     if (gameInterval) clearInterval(gameInterval);
     gameInterval = setInterval(gameLoop, gameSpeed);
+    
+    // 显示控制提示
+    showControlTips();
 }
 
-// 添加移动设备控制
-function initMobileControls() {
-    const upBtn = document.getElementById('upBtn');
-    const downBtn = document.getElementById('downBtn');
-    const leftBtn = document.getElementById('leftBtn');
-    const rightBtn = document.getElementById('rightBtn');
+// 显示控制提示
+function showControlTips() {
+    const tips = document.createElement('div');
+    tips.style.position = 'fixed';
+    tips.style.top = '10px';
+    tips.style.left = '50%';
+    tips.style.transform = 'translateX(-50%)';
+    tips.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    tips.style.color = 'white';
+    tips.style.padding = '10px 20px';
+    tips.style.borderRadius = '5px';
+    tips.style.zIndex = '1000';
+    tips.textContent = '使用方向键控制蛇的移动';
+    document.body.appendChild(tips);
+    setTimeout(() => tips.remove(), 3000);
+}
 
-    upBtn.addEventListener('click', () => {
-        if (dy !== 1 && isGameRunning) {
-            dx = 0;
-            dy = -1;
-        }
-    });
+// 辅助函数：绘制圆角矩形
+function roundRect(ctx, x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+}
 
-    downBtn.addEventListener('click', () => {
-        if (dy !== -1 && isGameRunning) {
-            dx = 0;
-            dy = 1;
-        }
-    });
+// 直接添加键盘事件监听
+document.addEventListener('keydown', handleKeyPress);
 
-    leftBtn.addEventListener('click', () => {
-        if (dx !== 1 && isGameRunning) {
-            dx = -1;
-            dy = 0;
-        }
-    });
+// 确保canvas可以接收键盘事件
+canvas.tabIndex = 1;
+canvas.style.outline = 'none'; // 移除焦点边框
 
-    rightBtn.addEventListener('click', () => {
-        if (dx !== -1 && isGameRunning) {
+// 添加触摸控制
+let touchStartX = 0;
+let touchStartY = 0;
+
+canvas.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    e.preventDefault();
+});
+
+canvas.addEventListener('touchmove', (e) => {
+    if (!isGameRunning) return;
+    
+    e.preventDefault();
+    const touchEndX = e.touches[0].clientX;
+    const touchEndY = e.touches[0].clientY;
+    
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+    
+    // 确定滑动方向
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // 水平滑动
+        if (deltaX > 0 && dx !== -1) {
             dx = 1;
             dy = 0;
+            console.log('触摸向右'); // 调试信息
+        } else if (deltaX < 0 && dx !== 1) {
+            dx = -1;
+            dy = 0;
+            console.log('触摸向左'); // 调试信息
         }
-    });
-}
-
-// 初始化移动控制
-initMobileControls();
+    } else {
+        // 垂直滑动
+        if (deltaY > 0 && dy !== -1) {
+            dx = 0;
+            dy = 1;
+            console.log('触摸向下'); // 调试信息
+        } else if (deltaY < 0 && dy !== 1) {
+            dx = 0;
+            dy = -1;
+            console.log('触摸向上'); // 调试信息
+        }
+    }
+    
+    touchStartX = touchEndX;
+    touchStartY = touchEndY;
+});

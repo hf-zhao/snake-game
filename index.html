@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>趣味贪吃蛇</title>
+    <title>贪吃琪琪</title>
     <link rel="stylesheet" href="./style.css">
     <!-- 添加网站图标 -->
     <link rel="icon" type="image/png" href="./favicon.png">
@@ -14,10 +14,12 @@
 <body>
     <div class="game-container">
         <div class="game-header">
-            <h2>趣味贪吃蛇</h2>
+            <h2>贪吃琪琪</h2>
             <div class="score">分数: <span id="score">0</span></div>
         </div>
-        <canvas id="gameCanvas" width="600" height="600"></canvas>
+        <div class="canvas-container">
+            <canvas id="gameCanvas"></canvas>
+        </div>
         <div class="game-controls">
             <button onclick="startGame()">开始游戏</button>
             <!-- 添加移动设备的触摸控制按钮 -->
