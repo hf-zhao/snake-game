@@ -7,71 +7,44 @@ body {
     background-color: #2c3e50;
     font-family: Arial, sans-serif;
     color: #ecf0f1;
-    padding: 10px;
-    box-sizing: border-box;
-    overflow: hidden;
 }
 
 .game-container {
     background-color: #34495e;
-    padding: 15px;
+    padding: 20px;
     border-radius: 15px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-    width: 100%;
-    max-width: 700px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin: auto;
+    text-align: center;
 }
 
 .game-header {
-    text-align: center;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 10px;
+    margin-bottom: 20px;
 }
 
 .game-header h2 {
     color: #3498db;
-    margin: 0;
-    font-size: 1.8em;
+    margin: 0 0 10px 0;
+    font-size: 2em;
 }
 
 .score {
-    font-size: 1.4em;
+    font-size: 1.6em;
     color: #ecf0f1;
     font-weight: bold;
 }
 
-.canvas-container {
-    position: relative;
-    width: 100%;
-    padding-bottom: 100%;
-    margin: 0 auto;
-}
-
 #gameCanvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
+    width: 600px;
+    height: 600px;
     border: 3px solid #3498db;
     background-color: #2c3e50;
     border-radius: 5px;
-    touch-action: none;
-}
-
-.game-controls {
-    text-align: center;
-    padding: 0 10px;
+    margin: 0 auto 20px auto;
 }
 
 button {
-    padding: 10px 25px;
-    font-size: 1.2em;
+    padding: 12px 30px;
+    font-size: 1.3em;
     background-color: #3498db;
     color: white;
     border: none;
@@ -85,59 +58,27 @@ button:hover {
     transform: scale(1.05);
 }
 
-/* 移动设备控制按钮样式 */
-.mobile-controls {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 15px;
+.control-tip {
+    margin-top: 10px;
+    color: #bdc3c7;
+    font-size: 1.1em;
 }
 
-.horizontal-controls {
-    display: flex;
-    gap: 15px;
-    margin: 8px 0;
-}
-
-.mobile-controls button {
-    width: 55px;
-    height: 55px;
-    padding: 0;
-    font-size: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-    body {
-        padding: 5px;
+@media (max-width: 700px) {
+    #gameCanvas {
+        width: 400px;
+        height: 400px;
     }
     
     .game-container {
-        padding: 10px;
-        width: 95%;
-    }
-    
-    .game-header {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .mobile-controls {
-        display: flex;
+        padding: 15px;
+        margin: 10px;
     }
 }
 
-/* 触摸设备优化 */
-@media (hover: none) {
-    button:hover {
-        transform: none;
-    }
-    
-    .mobile-controls button:active {
-        background-color: #2980b9;
-        transform: scale(0.95);
+@media (max-width: 500px) {
+    #gameCanvas {
+        width: 300px;
+        height: 300px;
     }
 }
